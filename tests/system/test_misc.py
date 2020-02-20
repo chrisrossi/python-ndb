@@ -56,3 +56,27 @@ def test_pickle_roundtrip_structured_property(dispose_of):
     assert entity.other.key is None or entity.other.key.id() is None
     entity = pickle.loads(pickle.dumps(entity))
     assert entity.other.foo == 1
+
+
+@pytest.mark.usefixtures("client_context")
+def test_inheritance_edge_case(dispose_of):
+    """Regression test for Issue #331
+
+    This is an odd way to do things, but apparently it worked in GAE NDB.
+
+    https://github.com/googleapis/python-ndb/issues/331
+    """
+    class SomeKind(ndb.Model):
+        foo = ndb.IntegerProperty()
+
+    class OtherKind(SomeKind):
+        bar = ndb.IntegerProperty()
+
+    other = OtherKind(foo=1, bar=2)
+    key = other.put()
+    dispose_of(key._key)
+
+    del OtherKind
+
+    some = SomeKind.get_by_id(key.id())
+    assert some.foo == 1
