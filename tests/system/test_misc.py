@@ -72,11 +72,16 @@ def test_inheritance_edge_case(dispose_of):
     class OtherKind(SomeKind):
         bar = ndb.IntegerProperty()
 
-    other = OtherKind(foo=1, bar=2)
+    name = "inigo_montoya"
+    other = OtherKind(id=name, foo=1, bar=2)
     key = other.put()
     dispose_of(key._key)
 
-    del OtherKind
+    retreived = OtherKind.get_or_insert(name)
+    assert retreived.foo == 1
 
-    some = SomeKind.get_by_id(key.id())
+    del OtherKind
+    del ndb.Model._kind_map["OtherKind"]
+
+    some = SomeKind.get_or_insert(name)
     assert some.foo == 1
